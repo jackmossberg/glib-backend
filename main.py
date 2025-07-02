@@ -37,7 +37,7 @@ def main():
     test_mesh.init(cube.positions, cube.indices, cube.uvs, cube.normals)
 
     # spawn in the model object (requires a mesh, working shader files, and a reference to the app object)
-    test_model = g.Model()
+    test_model = g.Model()  
     test_model.init(
         # replace these with the correct file paths
         # or just use 'import os' to automate this bc its like 2:00 AM and i don't feel like doing it myself
@@ -47,6 +47,19 @@ def main():
         test_mesh,
         app
     )
+
+    model_2 = g.Model()
+    model_2.init(
+        fpath+"default.vert", 
+        fpath+"default.frag",
+        fpath+"/example_assets/DOOR_1A.PNG",
+        test_mesh,
+        app
+    )
+
+    model_2.position = [1.0, 0.0, 0.0]
+
+    glib.depth_test(True)
 
     # the main update loop
     while not glib.should_app_close(app):
@@ -58,7 +71,8 @@ def main():
         # bind an app that we want to render to (in this case we only have one)
         glib.bind_app(app)
         # call the render function attached to the model object
-        test_model.render(main_camera)
+        test_model.render(app, main_camera)
+        model_2.render(app, main_camera)
         # unbind the app object from rendering
         glib.unbind_app(app)
 

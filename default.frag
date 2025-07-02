@@ -5,6 +5,6 @@ in vec3 i_normal;
 in vec2 i_uv;
 uniform sampler2D tex0;
 void main() {
-    //final_color = vec4(i_position.x, i_position.y, 0.5f, 1.0f);
-    final_color = texture(tex0, i_uv);
+    final_color = vec4(i_position.x, i_position.y, i_position.z, 1.0f);
+    //final_color = texture(tex0, i_uv);
 }

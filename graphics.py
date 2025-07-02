@@ -96,8 +96,8 @@ class Model:
     texture: int = 0
     vmesh: Mesh = field(default_factory=Mesh)
 
-    def render(self, camera: Camera):
-        projection_matrix = glib.projection_matrix4x4(camera.fovy, camera.window_width, camera.window_height)
+    def render(self, app, camera: Camera):
+        projection_matrix = glib.projection_matrix4x4(camera.fovy, glib.get_window_width(app), glib.get_window_height(app))
         view_matrix = glib.view_matrix4x4(np.array(camera.position, dtype=np.float32), 
                                          np.array(camera.rotation, dtype=np.float32))
         transform_matrix = glib.transform_matrix4x4(np.array(self.position, dtype=np.float32), 
