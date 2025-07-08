@@ -1,16 +1,11 @@
-import numpy as np
 import glib
-import physics as phys
 import graphics as gapi
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
+from dataclasses import dataclass, field
+import numpy as np
 
-pointlights: list = []
-
-# ... (CubePrimitive, Mesh, Camera, Model, PointLight, App classes unchanged) ...
-
-def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, texture_scale: float, scale: float, resolution: int, app: 'gapi.App') -> 'gapi.Model':
+def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, texture_scale: float, scale: float, resolution: int, app: gapi.App) -> gapi.Model:
     t = (1.0 + np.sqrt(5.0)) / 2.0
     positions = [
         [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
@@ -84,11 +79,10 @@ def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, tex
     
     normals = [p / np.linalg.norm(p) for p in positions]
     
-    # Convert NumPy arrays to Python lists
-    positions = np.array(positions, dtype=np.float32).flatten().tolist()
-    indices = np.array(indices, dtype=np.uint32).tolist()
-    uvs = np.array(uvs, dtype=np.float32).flatten().tolist()
-    normals = np.array(normals, dtype=np.float32).flatten().tolist()
+    positions = np.array(positions, dtype=np.float32).flatten()
+    indices = np.array(indices, dtype=np.uint32)
+    uvs = np.array(uvs, dtype=np.float32).flatten()
+    normals = np.array(normals, dtype=np.float32).flatten()
     
     mesh = gapi.Mesh()
     mesh.init(positions, indices, uvs, normals)
@@ -98,7 +92,7 @@ def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, tex
     
     return model
 
-def generate_plane(x: int, y: int, subdev: int, fpath: str, tfpath: str, tscale: float, app) -> 'gapi.Model':
+def generate_plane(x : int, y : int, subdev : int, fpath : str, tfpath : str, tscale : float, app) -> gapi.Model:
     step_x = x / subdev
     step_y = y / subdev
     
@@ -128,16 +122,15 @@ def generate_plane(x: int, y: int, subdev: int, fpath: str, tfpath: str, tscale:
             indices.extend([t_left, b_left, t_right])
             indices.extend([t_right, b_left, b_right])
 
-    # Convert NumPy arrays to Python lists
-    positions = np.array(positions, dtype=np.float32).tolist()
-    indices = np.array(indices, dtype=np.uint32).tolist()
-    uvs = np.array(uvs, dtype=np.float32).tolist()
-    normals = np.array(normals, dtype=np.float32).tolist()
+    positions = np.array(positions, dtype=np.float32)
+    indices = np.array(indices, dtype=np.uint32)
+    uvs = np.array(uvs, dtype=np.float32)
+    normals = np.array(normals, dtype=np.float32)
 
-    mesh = gapi.Mesh()
+    mesh : gapi.Mesh = gapi.Mesh()
     mesh.init(positions=positions, indices=indices, uvs=uvs, normals=normals)
 
-    model = gapi.Model()
+    model : gapi.Model = gapi.Model()
     model.init(
         fpath+"default.vert", 
         fpath+"default.frag",
@@ -148,8 +141,6 @@ def generate_plane(x: int, y: int, subdev: int, fpath: str, tfpath: str, tscale:
     )
 
     return model
-
-# ... (Planet, Star, create_skybox, render_skybox, main functions unchanged) ...
 
 @dataclass
 class Planet:
@@ -209,12 +200,7 @@ class Star:
 def create_skybox(fpath : str, texture_scale, tfpath, app) -> gapi.Model:
     cube = gapi.CubePrimitive()
     mesh = gapi.Mesh()
-    # Ensure all arrays are float32 or uint32 and converted to lists
-    positions = np.array(cube.positions, dtype=np.float32).tolist()
-    indices = np.array(cube.indices, dtype=np.uint32).tolist()
-    uvs = np.array(cube.uvs, dtype=np.float32).tolist()
-    normals = np.array(cube.normals, dtype=np.float32).tolist()
-    mesh.init(positions, indices, uvs, normals)
+    mesh.init(cube.positions, cube.indices, cube.uvs, cube.normals)
 
     model = gapi.Model()
     model.init(
@@ -241,13 +227,8 @@ def main():
 
     main_camera = gapi.Camera()
     main_camera.init(90.0, 1000, 900)
-    main_camera.position = [float(0.0), float(20.0), float(-20.0)]
-    main_camera.position = [float(x) for x in main_camera.position]
-    main_camera.rotation = [float(45.0), float(0.0), float(0.0)]
-    main_camera.rotation = [float(x) for x in main_camera.rotation]
-    # Ensure all elements are Python floats (not numpy types)
-    main_camera.position = [float(x) for x in main_camera.position]
-    main_camera.rotation = [float(x) for x in main_camera.rotation]
+    main_camera.position = [0.0, 20.0, -20.0]
+    main_camera.rotation = [45.0, 0.0, 0.0]
 
     test_light : gapi.PointLight = gapi.PointLight()
     test_light.init(50.0, 0.5)
