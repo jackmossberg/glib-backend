@@ -3,18 +3,21 @@ import graphics as gapi
 import os
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field
-import numpy as np
+import math
 
 def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, texture_scale: float, scale: float, resolution: int, app: gapi.App) -> gapi.Model:
-    t = (1.0 + np.sqrt(5.0)) / 2.0
+    t = (1.0 + math.sqrt(5.0)) / 2.0
     positions = [
         [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
         [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
         [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
     ]
     
-    positions = [p / np.linalg.norm(p) * scale for p in positions]
+    def norm(v):
+        mag = math.sqrt(sum(x * x for x in v))
+        return [x / mag * scale for x in v]
     
+    positions = [norm(p) for p in positions]
     indices = [
         0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11,
         1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
@@ -31,7 +34,7 @@ def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, tex
             if key not in edge_midpoints:
                 p1, p2 = positions[v1], positions[v2]
                 mid = [(p1[i] + p2[i]) / 2 for i in range(3)]
-                mid = mid / np.linalg.norm(mid) * scale
+                mid = norm(mid)
                 edge_midpoints[key] = len(positions)
                 positions.append(mid)
             return edge_midpoints[key]
@@ -73,17 +76,17 @@ def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, tex
     
     uvs = []
     for pos in positions:
-        u = 0.5 + np.arctan2(pos[2], pos[0]) / (2 * np.pi)
-        v = 0.5 - np.arcsin(pos[1] / scale) / np.pi
+        u = 0.5 + math.atan2(pos[2], pos[0]) / (2 * math.pi)
+        v = 0.5 - math.asin(pos[1] / scale) / math.pi
         uvs.append([u, v])
     
-    normals = [p / np.linalg.norm(p) for p in positions]
+    normals = [norm(p) for p in positions]
     
-    positions = np.array(positions, dtype=np.float32).flatten()
-    indices = np.array(indices, dtype=np.uint32)
-    uvs = np.array(uvs, dtype=np.float32).flatten()
-    normals = np.array(normals, dtype=np.float32).flatten()
-    
+    # Flatten lists for glib
+    positions = [x for p in positions for x in p]
+    uvs = [x for uv in uvs for x in uv]
+    normals = [x for n in normals for x in n]
+
     mesh = gapi.Mesh()
     mesh.init(positions, indices, uvs, normals)
     
@@ -92,7 +95,7 @@ def generate_icosphere(vert_fpath: str, frag_fpath: str, texture_fpath: str, tex
     
     return model
 
-def generate_plane(x : int, y : int, subdev : int, fpath : str, tfpath : str, tscale : float, app) -> gapi.Model:
+def generate_plane(x: int, y: int, subdev: int, fpath: str, tfpath: str, tscale: float, app) -> gapi.Model:
     step_x = x / subdev
     step_y = y / subdev
     
@@ -106,35 +109,25 @@ def generate_plane(x : int, y : int, subdev : int, fpath : str, tfpath : str, ts
             pos_x = -x/2 + i * step_x
             pos_y = -y/2 + j * step_y
             positions.extend([pos_x, 0, pos_y])
-
-            u = i / subdev
-            v = j / subdev
-            uvs.extend([u, v])
-
+            uvs.extend([i / subdev, j / subdev])
             normals.extend([0.0, 1.0, 0.0])
+    
     for i in range(subdev):
         for j in range(subdev):
             t_left = i * (subdev + 1) + j
             t_right = t_left + 1
             b_left = (i + 1) * (subdev + 1) + j
             b_right = b_left + 1
+            indices.extend([t_left, b_left, t_right, t_right, b_left, b_right])
 
-            indices.extend([t_left, b_left, t_right])
-            indices.extend([t_right, b_left, b_right])
+    mesh = gapi.Mesh()
+    mesh.init(positions, indices, uvs, normals)
 
-    positions = np.array(positions, dtype=np.float32)
-    indices = np.array(indices, dtype=np.uint32)
-    uvs = np.array(uvs, dtype=np.float32)
-    normals = np.array(normals, dtype=np.float32)
-
-    mesh : gapi.Mesh = gapi.Mesh()
-    mesh.init(positions=positions, indices=indices, uvs=uvs, normals=normals)
-
-    model : gapi.Model = gapi.Model()
+    model = gapi.Model()
     model.init(
-        fpath+"default.vert", 
-        fpath+"default.frag",
-        fpath+tfpath,
+        fpath + "default.vert",
+        fpath + "default.frag",
+        fpath + tfpath,
         tscale,
         mesh,
         app
@@ -144,21 +137,18 @@ def generate_plane(x : int, y : int, subdev : int, fpath : str, tfpath : str, ts
 
 @dataclass
 class Planet:
-    model : gapi.Model = field(default_factory=gapi.Model)
+    model: gapi.Model = field(default_factory=gapi.Model)
+    position: list = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    rotation: list = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    radius: float = 1.0
+    mass: float = 1.0
+    gscale: float = 1.0
 
-    position : list = field(default_factory=lambda: [0.0, 0.0, 0.0])
-    rotation : list = field(default_factory=lambda: [0.0, 0.0, 0.0])
-
-    radius : float = 1.0
-    mass : float = 1.0
-
-    gscale : float = 1.0
-
-    def init(self, app, radius : float, mass : float, gscale : float):
-        fpath : str = os.path.abspath(__file__).rstrip("main.py")
+    def init(self, app, radius: float, mass: float, gscale: float):
+        fpath = os.path.abspath(__file__).rstrip("main.py")
         self.model = generate_icosphere(
-            vert_fpath=fpath+"planetsurface.vert",
-            frag_fpath=fpath+"planetsurface.frag",
+            vert_fpath=fpath + "planetsurface.vert",
+            frag_fpath=fpath + "planetsurface.frag",
             texture_fpath="",
             texture_scale=3.0,
             scale=radius/2,
@@ -169,44 +159,37 @@ class Planet:
         self.gscale = gscale
         self.radius = radius
 
-    def render(self, app, main_camera : gapi.Camera):
+    def render(self, app, main_camera: gapi.Camera):
         self.model.render(app=app, camera=main_camera)
 
     def update(self, app):
         self.rotation[1] += 10.3 / self.radius * app.deltatime
-
         self.model.position = self.position
         self.model.rotation = self.rotation
-
-        self.model.scale[0] = self.radius
-        self.model.scale[1] = self.radius
-        self.model.scale[2] = self.radius
+        self.model.scale = [self.radius] * 3
 
     def destroy(self):
-        # spawn plant 'fragments'
-        # de-spawn self
-        
         pass
 
 @dataclass
 class Star:
-    def init():
+    def init(self):
         pass
-    def update():
+    def update(self):
         pass
-    def destroy():
+    def destroy(self):
         pass
 
-def create_skybox(fpath : str, texture_scale, tfpath, app) -> gapi.Model:
+def create_skybox(fpath: str, texture_scale, tfpath, app) -> gapi.Model:
     cube = gapi.CubePrimitive()
     mesh = gapi.Mesh()
     mesh.init(cube.positions, cube.indices, cube.uvs, cube.normals)
 
     model = gapi.Model()
     model.init(
-        fpath+"skybox_1/sky.vert", 
-        fpath+"skybox_1/sky.frag",
-        fpath+tfpath,
+        fpath + "skybox_1/sky.vert",
+        fpath + "skybox_1/sky.frag",
+        fpath + tfpath,
         texture_scale,
         mesh,
         app
@@ -214,15 +197,15 @@ def create_skybox(fpath : str, texture_scale, tfpath, app) -> gapi.Model:
 
     return model
 
-def render_skybox(app, model : gapi.Model, camera : gapi.Camera):
+def render_skybox(app, model: gapi.Model, camera: gapi.Camera):
     model.position = [-camera.position[0], camera.position[1], -camera.position[2]]
     glib.depth_test(False)
     model.render(camera=camera, app=app)
     glib.depth_test(True)
 
 def main():
-    fpath : str = os.path.abspath(__file__).rstrip("main.py")   
-    app : gapi.App = gapi.App();
+    fpath = os.path.abspath(__file__).rstrip("main.py")
+    app = gapi.App()
     app.init(1000, 900, "build", True, 0.6, 0.2, 0.29)
 
     main_camera = gapi.Camera()
@@ -230,37 +213,27 @@ def main():
     main_camera.position = [0.0, 20.0, -20.0]
     main_camera.rotation = [45.0, 0.0, 0.0]
 
-    test_light : gapi.PointLight = gapi.PointLight()
+    test_light = gapi.PointLight()
     test_light.init(50.0, 0.5)
     test_light.position = [10.0, 5.0, 10.0]
     test_light.color = [1.0, 0.7, 1.0]
 
-    test_planet : Planet = Planet()
+    test_planet = Planet()
     test_planet.init(app=app, radius=2.6, mass=1.0, gscale=1.2)
 
-    test_moon : Planet = Planet()
+    test_moon = Planet()
     test_moon.init(app=app, radius=1.6, mass=0.2, gscale=0.67)
     test_moon.position = [15.0, 0.0, 0.0]
 
     main_skybox = create_skybox(fpath=fpath, app=app, tfpath="common_assets/dev_textures/Dark/texture_02.png", texture_scale=1.0)
-    #main_skybox = create_skybox(fpath=fpath, app=app, tfpath="skybox_1/front.png", texture_scale=1.0)
 
     while not glib.should_app_close(app.pointer):
         test_moon.update(app=app)
         test_planet.update(app=app)
-
-        # ----------------------------------------------
-        # ^^^ app pysics calculated before rendering ^^^
         app.bind()
         render_skybox(app, main_skybox, main_camera)
-        # start render here...
-        # --------------------
-
         test_moon.render(app=app, main_camera=main_camera)
         test_planet.render(app=app, main_camera=main_camera)
-        
-        # --------------------
-        # end render here...
         app.unbind()
 
     app.destroy()
