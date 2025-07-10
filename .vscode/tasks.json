@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "C/C++: clang build Python extension (macOS)",
+            "command": "clang",
+            "args": [
+                "-shared",
+                "-fPIC",
+                "-I/Library/Frameworks/Python.framework/Versions/3.13/include/python3.13",
+                "-I${workspaceFolder}/include",
+                "${workspaceFolder}/src/glib.c",
+                "${workspaceFolder}/src/glad.c",
+                "${workspaceFolder}/src/graphics.c",
+                "${workspaceFolder}/src/maths.c",
+                "${workspaceFolder}/src/stb.c",
+                "-L/Library/Frameworks/Python.framework/Versions/3.13/lib",
+                "-L${workspaceFolder}/lib",
+                "-lpython3.13",
+                "-lglfw3",
+                "-framework", "OpenGL",
+                "-framework", "Cocoa",
+                "-framework", "IOKit",
+                "-framework", "CoreFoundation",
+                "-framework", "CoreGraphics",
+                "-o",
+                "${workspaceFolder}/glib.so"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build glib.so for macOS"
+        },
+        {
+            "type": "shell",
+            "label": "C/C++: mingw build Python extension (Windows)",
+            "command": "x86_64-w64-mingw32-gcc",
+            // do ts later
+            "detail": "Cross-build glib.pyd for Windows using MinGW"
+        }
+    ]
+}

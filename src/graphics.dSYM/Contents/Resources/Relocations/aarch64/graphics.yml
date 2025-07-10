@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/jackmossberg/Desktop/OpenGL Python Lib/src/graphics'
+relocations:     []
+...
