@@ -5,7 +5,8 @@
 #include "graphics.h"
 #include "maths.h"
 
-// Function declarations (unchanged for non-NumPy functions)
+#define _FL "graphics.c"
+
 static PyObject* glib_depth_test(PyObject* self, PyObject* args);
 static PyObject* glib_get_window_width(PyObject* self, PyObject* args);
 static PyObject* glib_get_window_height(PyObject* self, PyObject* args);
@@ -45,7 +46,6 @@ static PyObject* glib_push_matrix3x3_to_shader(PyObject* self, PyObject* args);
 static PyObject* glib_push_matrix4x4_to_shader(PyObject* self, PyObject* args);
 static PyObject* glib_push_texture2D_to_shader(PyObject* self, PyObject* args);
 
-// Helper function to convert Python sequence to float array
 static int sequence_to_float_array(PyObject* seq, float* arr, Py_ssize_t expected_len) {
     if (!PySequence_Check(seq) || PySequence_Length(seq) != expected_len) {
         PyErr_SetString(PyExc_ValueError, "Expected a sequence of correct length");
@@ -64,7 +64,6 @@ static int sequence_to_float_array(PyObject* seq, float* arr, Py_ssize_t expecte
     return 1;
 }
 
-// Helper function to create Python list from float array
 static PyObject* float_array_to_list(float* arr, Py_ssize_t len) {
     PyObject* list = PyList_New(len);
     if (!list) {
@@ -82,7 +81,6 @@ static PyObject* float_array_to_list(float* arr, Py_ssize_t len) {
     return list;
 }
 
-// Modified vector addition functions
 static PyObject* glib_vec2_add(PyObject* self, PyObject* args) {
     PyObject *v1_obj, *v2_obj;
     float v1[2], v2[2], result[2];
@@ -291,7 +289,6 @@ static PyObject* glib_gen_vertex_buffer_object(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    // Convert positions (float)
     for (Py_ssize_t i = 0; i < pos_len; i++) {
         PyObject* item = PySequence_GetItem(positions, i);
         if (!PyFloat_Check(item)) {
@@ -307,7 +304,6 @@ static PyObject* glib_gen_vertex_buffer_object(PyObject* self, PyObject* args) {
         Py_DECREF(item);
     }
 
-    // Convert indices (unsigned int)
     for (Py_ssize_t i = 0; i < idx_len; i++) {
         PyObject* item = PySequence_GetItem(indices, i);
         if (!PyLong_Check(item)) {
@@ -323,7 +319,6 @@ static PyObject* glib_gen_vertex_buffer_object(PyObject* self, PyObject* args) {
         Py_DECREF(item);
     }
 
-    // Convert uvs (float, if provided)
     if (uvs_len > 0) {
         for (Py_ssize_t i = 0; i < uvs_len; i++) {
             PyObject* item = PySequence_GetItem(uvs, i);
@@ -341,7 +336,6 @@ static PyObject* glib_gen_vertex_buffer_object(PyObject* self, PyObject* args) {
         }
     }
 
-    // Convert normals (float, if provided)
     if (norm_len > 0) {
         for (Py_ssize_t i = 0; i < norm_len; i++) {
             PyObject* item = PySequence_GetItem(normals, i);
@@ -385,7 +379,6 @@ static PyObject* glib_gen_vertex_buffer_object(PyObject* self, PyObject* args) {
     return PyLong_FromUnsignedLong(vao);
 }
 
-// Unchanged functions (no NumPy dependency)
 static PyObject* glib_gen_frame_buffer_object(PyObject* self, PyObject* args) {
     PyObject* app_capsule;
     int out_tex, width, height;

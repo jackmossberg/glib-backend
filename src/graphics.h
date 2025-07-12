@@ -87,4 +87,4 @@ API void glapi_PushVec3ToShader(const char* varname, float* value, gl_shader sha
 API void glapi_PushVec4ToShader(const char* varname, float* value, gl_shader shader);
 API void glapi_PushMatrix3x3ToShader(const char* varname, float* value, gl_shader shader);
 API void glapi_PushMatrix4x4ToShader(const char* varname, float* value, gl_shader shader);
-API void glapi_PushTexture2DToShader(const char* varname, gl_texture value, gl_shader shader);
+API void glapi_PushTexture2DToShader(const char* varname, gl_texture value, gl_shader shader);  
